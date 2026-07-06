@@ -30,15 +30,15 @@ Needs:
 - G3: Create, view, edit, and update status for Change Orders (PCOs)
 - G4: Dashboard overview showing key counts (open, overdue, in review, approved) and upcoming deadlines
 - G5: Automatic "days open" / "overdue" calculation based on due dates (no manual flagging)
-- G6: Single project scope for MVP (no multi-project switching required yet)
+- G6: Support multiple projects — all tracking data (RFIs, Submittals, Change Orders, activity) is scoped to a project, and the user can create new projects and switch between them
 - G7: Import existing RFI/Submittal records from a CSV/Excel file, so a user migrating from a manual spreadsheet doesn't lose their history
+- G8: Project list page ("portfolio" view) with quick project switching available from anywhere in the app, preserving the current screen when switching
 
 ## 5. Non-goals (explicitly out of scope for MVP)
 
 - Multi-user roles/permissions (MVP can be single-user or simple shared access)
 - File/drawing attachments per item
 - Automated email notifications
-- Multi-project portfolio view
 - Mobile native app (responsive web is enough)
 - Integration with external systems (Procore, Autodesk Construction Cloud, etc.)
 - Custom report builder (a simple export is enough for MVP)

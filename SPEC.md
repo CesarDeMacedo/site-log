@@ -83,11 +83,15 @@ Populate `activity_log` via a Postgres trigger or application-level insert on ev
 
 | Route | Purpose |
 |---|---|
-| `/` | Overview dashboard — KPI cards, RFI log preview, Submittal log preview, Recent Activity, Upcoming Deadlines |
-| `/rfis` | Full RFI Log — table with filter tabs (All / Open / Overdue / Closed), create/edit modal |
-| `/submittals` | Full Submittal Log — table + create/edit modal |
-| `/change-orders` | Change Order log — table + create/edit modal |
-| `/export` | Simple CSV export of current logs |
+| `/` | Redirect: to `/projects/[projectId]` when exactly one project exists, otherwise to `/projects` |
+| `/projects` | Project list ("portfolio") + create-new-project form (name, general contractor, PM name) |
+| `/projects/[projectId]` | Overview dashboard for one project — KPI cards, RFI log preview, Submittal log preview, Recent Activity, Upcoming Deadlines |
+| `/projects/[projectId]/rfis` | Full RFI Log — table with filter tabs (All / Open / Overdue / Closed), create/edit modal |
+| `/projects/[projectId]/submittals` | Full Submittal Log — table + create/edit modal |
+| `/projects/[projectId]/change-orders` | Change Order log — table + create/edit modal |
+| `/projects/[projectId]/export` | Simple CSV export of that project's logs |
+
+A project selector in the sidebar allows switching projects from anywhere, preserving the current sub-route (e.g. switching projects while on the RFI Log lands on the other project's RFI Log). Every entity query filters by the `projectId` from the URL — data from different projects must never mix.
 
 ## 3b. Spreadsheet import (RFI Log and Submittal Log)
 
