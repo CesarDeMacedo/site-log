@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+/* Design tokens — see .claude/skills/site-log-design/SKILL.md */
+@theme {
+  --color-bg: #0b141f;
+  --color-surface: #101c2c;
+  --color-surface-2: #16243a;
+  --color-line: #223549;
+  --color-blueprint: #4fa6d8;
+  --color-blueprint-dim: #2e6f9e;
+  --color-amber: #e8a23a;
+  --color-danger: #e0603f;
+  --color-success: #4fb27e;
+  --color-text: #e7edf3;
+  --color-muted: #7c8ca0;
+  --color-muted-2: #56687d;
+
+  --font-display: var(--font-oswald), sans-serif;
+  --font-sans: var(--font-plex-sans), sans-serif;
+  --font-mono: var(--font-plex-mono), monospace;
+}
+
+/* Signature blueprint-grid texture (SKILL.md) — subtle, do not remove. */
+body {
+  background-color: var(--color-bg);
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      rgba(79, 166, 216, 0.045) 0px,
+      rgba(79, 166, 216, 0.045) 1px,
+      transparent 1px,
+      transparent 32px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(79, 166, 216, 0.045) 0px,
+      rgba(79, 166, 216, 0.045) 1px,
+      transparent 1px,
+      transparent 32px
+    );
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Signature "stamp" status badge (SKILL.md) — color comes from currentColor,
+   set via a text-* utility at the call site. */
+.stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 10.5px;
+  letter-spacing: 1.4px;
+  padding: 4px 10px 4px 8px;
+  border: 1.5px solid currentColor;
+  border-radius: 3px;
+  transform: rotate(-3deg);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.stamp::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}

@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Site Log — Construction Administration Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0B141F;
+    --surface: #101C2C;
+    --surface-2: #16243A;
+    --line: #223549;
+    --blueprint: #4FA6D8;
+    --blueprint-dim: #2E6F9E;
+    --amber: #E8A23A;
+    --danger: #E0603F;
+    --success: #4FB27E;
+    --text: #E7EDF3;
+    --muted: #7C8CA0;
+    --muted-2: #56687D;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      linear-gradient(var(--bg), var(--bg)),
+      repeating-linear-gradient(0deg, rgba(79,166,216,0.045) 0px, rgba(79,166,216,0.045) 1px, transparent 1px, transparent 32px),
+      repeating-linear-gradient(90deg, rgba(79,166,216,0.045) 0px, rgba(79,166,216,0.045) 1px, transparent 1px, transparent 32px);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .app{ display:flex; min-height:100vh; }
+
+  /* SIDEBAR */
+  .sidebar{
+    width: 232px;
+    flex-shrink:0;
+    background: var(--surface);
+    border-right:1px solid var(--line);
+    padding: 22px 16px;
+    display:flex;
+    flex-direction:column;
+    gap: 26px;
+  }
+  .brand{ display:flex; align-items:center; gap:10px; padding: 0 6px; }
+  .brand-mark{
+    width:34px; height:34px; border:2px solid var(--blueprint);
+    border-radius:4px; display:flex; align-items:center; justify-content:center;
+    font-family:'Oswald'; font-weight:700; color:var(--blueprint); font-size:15px;
+    transform: rotate(-2deg);
+  }
+  .brand-text{ font-family:'Oswald'; font-weight:600; font-size:14.5px; letter-spacing:0.4px; line-height:1.2; }
+  .brand-text span{ display:block; color:var(--muted); font-size:10px; letter-spacing:1.6px; font-weight:500; margin-top:2px; }
+
+  .nav-group-label{ font-size:10px; letter-spacing:1.6px; color:var(--muted-2); font-weight:600; padding:0 10px; margin-bottom:2px;}
+  nav{ display:flex; flex-direction:column; gap:2px; }
+  .nav-item{
+    display:flex; align-items:center; gap:10px;
+    padding:9px 10px; border-radius:6px; font-size:13.5px; color:var(--muted);
+    cursor:pointer; transition:.15s;
+  }
+  .nav-item svg{ width:16px; height:16px; opacity:.75; flex-shrink:0; }
+  .nav-item.active{ background: rgba(79,166,216,0.12); color: var(--text); border-left:2px solid var(--blueprint); padding-left:8px;}
+  .nav-item.active svg{ opacity:1; stroke: var(--blueprint); }
+  .nav-item:hover:not(.active){ color: var(--text); }
+  .nav-badge{ margin-left:auto; font-family:'IBM Plex Mono'; font-size:10.5px; background:var(--danger); color:#fff; padding:1px 6px; border-radius:9px; }
+  .nav-badge.amber{ background:var(--amber); color:#20160a; }
+
+  .sidebar-foot{ margin-top:auto; border-top:1px solid var(--line); padding-top:14px; font-size:11.5px; color:var(--muted-2); }
+
+  /* MAIN */
+  main{ flex:1; padding: 24px 30px 40px; max-width: 1360px; }
+
+  .topbar{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:22px; flex-wrap:wrap; gap:14px;}
+  .proj-eyebrow{ font-family:'IBM Plex Mono'; font-size:11px; color:var(--blueprint); letter-spacing:1px; margin-bottom:4px;}
+  h1{ font-family:'Oswald'; font-weight:600; font-size:26px; margin:0 0 4px; letter-spacing:0.3px;}
+  .proj-sub{ color:var(--muted); font-size:13px;}
+  .topbar-right{ display:flex; gap:10px; align-items:center; }
+  .pill{ font-family:'IBM Plex Mono'; font-size:11.5px; padding:6px 12px; border-radius:20px; border:1px solid var(--line); color:var(--muted); background:var(--surface); }
+  .pill.live{ color:var(--success); border-color: rgba(79,178,126,0.4); }
+  .pill.live::before{ content:''; display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--success); margin-right:7px; box-shadow:0 0 6px var(--success); }
+  .btn{ font-family:'IBM Plex Sans'; font-weight:600; font-size:13px; background:var(--blueprint-dim); color:#fff; border:none; padding:9px 16px; border-radius:6px; cursor:pointer; }
+
+  /* KPI ROW */
+  .kpi-row{ display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:22px; }
+  .kpi{ background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:16px 16px 14px; position:relative; overflow:hidden;}
+  .kpi::before{ content:''; position:absolute; top:0; left:0; width:3px; height:100%; background:var(--kpi-accent, var(--blueprint)); }
+  .kpi-label{ font-size:11px; color:var(--muted); letter-spacing:0.5px; margin-bottom:8px; text-transform:uppercase;}
+  .kpi-value{ font-family:'Oswald'; font-size:30px; font-weight:600; line-height:1;}
+  .kpi-value small{ font-family:'IBM Plex Sans'; font-size:13px; color:var(--muted); font-weight:400; margin-left:4px;}
+  .kpi-delta{ font-family:'IBM Plex Mono'; font-size:11px; margin-top:8px; color:var(--muted-2);}
+  .kpi-delta.warn{ color:var(--danger); }
+  .kpi-delta.ok{ color:var(--success); }
+
+  /* STAMP — signature element */
+  .stamp{
+    display:inline-flex; align-items:center; gap:6px;
+    font-family:'Oswald'; font-weight:600; font-size:10.5px; letter-spacing:1.4px;
+    padding:4px 10px 4px 8px; border:1.5px solid currentColor; border-radius:3px;
+    transform: rotate(-3deg);
+    text-transform:uppercase;
+    position:relative;
+  }
+  .stamp::before{ content:''; width:6px; height:6px; border-radius:50%; background:currentColor; }
+  .stamp.open{ color:var(--blueprint); }
+  .stamp.review{ color:var(--amber); }
+  .stamp.overdue{ color:var(--danger); }
+  .stamp.approved{ color:var(--success); }
+  .stamp.closed{ color:var(--muted-2); }
+
+  /* PANELS */
+  .grid-2{ display:grid; grid-template-columns: 1.55fr 1fr; gap:16px; align-items:start; }
+  .panel{ background:var(--surface); border:1px solid var(--line); border-radius:8px; margin-bottom:16px; }
+  .panel-head{ display:flex; justify-content:space-between; align-items:center; padding:16px 18px 12px; border-bottom:1px solid var(--line);}
+  .panel-head h2{ font-family:'Oswald'; font-size:15px; font-weight:600; margin:0; letter-spacing:0.3px;}
+  .panel-head .count{ font-family:'IBM Plex Mono'; font-size:11px; color:var(--muted); }
+  .tab-row{ display:flex; gap:4px; padding:10px 18px 0;}
+  .tab{ font-size:12px; padding:6px 12px; border-radius:5px 5px 0 0; color:var(--muted); cursor:pointer; border-bottom:2px solid transparent; }
+  .tab.active{ color:var(--text); border-color:var(--blueprint); background:rgba(79,166,216,0.06); }
+
+  table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+  th{ text-align:left; font-size:10.5px; letter-spacing:0.6px; color:var(--muted-2); text-transform:uppercase; font-weight:600; padding:10px 18px; border-bottom:1px solid var(--line);}
+  td{ padding:11px 18px; border-bottom:1px solid rgba(34,53,73,0.6); vertical-align:middle;}
+  tr:last-child td{ border-bottom:none; }
+  tr:hover td{ background: rgba(79,166,216,0.04); }
+  .id-cell{ font-family:'IBM Plex Mono'; color:var(--blueprint); font-size:12px;}
+  .days{ font-family:'IBM Plex Mono'; font-size:12px; }
+  .days.late{ color:var(--danger); font-weight:600;}
+  .desc{ color:var(--text); }
+  .who{ color:var(--muted); font-size:12px;}
+  .bar-track{ width:60px; height:5px; background:var(--line); border-radius:3px; overflow:hidden; display:inline-block; vertical-align:middle; margin-right:6px;}
+  .bar-fill{ height:100%; background:var(--blueprint); }
+
+  /* SIDE PANEL: activity + deadlines */
+  .activity-item{ display:flex; gap:10px; padding:12px 18px; border-bottom:1px solid rgba(34,53,73,0.6);}
+  .activity-item:last-child{ border-bottom:none; }
+  .dot{ width:7px; height:7px; border-radius:50%; margin-top:5px; flex-shrink:0;}
+  .dot.blue{ background:var(--blueprint); }
+  .dot.amber{ background:var(--amber); }
+  .dot.red{ background:var(--danger); }
+  .dot.green{ background:var(--success); }
+  .act-text{ font-size:12.5px; line-height:1.4; }
+  .act-text b{ color:var(--text); }
+  .act-time{ font-family:'IBM Plex Mono'; font-size:10.5px; color:var(--muted-2); margin-top:2px; }
+
+  .deadline-row{ display:flex; justify-content:space-between; align-items:center; padding:11px 18px; border-bottom:1px solid rgba(34,53,73,0.6); font-size:12.5px;}
+  .deadline-row:last-child{ border-bottom:none; }
+
+  .footer-note{ margin-top:8px; font-family:'IBM Plex Mono'; font-size:10.5px; color:var(--muted-2); text-align:center; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">SL</div>
+      <div class="brand-text">SITE LOG<span>CONSTRUCTION ADMIN</span></div>
+    </div>
+
+    <div>
+      <div class="nav-group-label">PROJECT</div>
+      <nav>
+        <div class="nav-item active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+          Overview
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l9 4.9V17L12 22 3 17V6.9z"/><path d="M12 12l9-5M12 12v10M12 12L3 7"/></svg>
+          RFI Log
+          <span class="nav-badge">7</span>
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+          Submittals
+          <span class="nav-badge amber">3</span>
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg>
+          Change Orders
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+          Schedule
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0z"/></svg>
+          Deficiencies
+        </div>
+      </nav>
+    </div>
+
+    <div>
+      <div class="nav-group-label">REPORTS</div>
+      <nav>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18M7 15l4-6 3 3 5-7"/></svg>
+          Client Dashboard
+        </div>
+        <div class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Export / Share
+        </div>
+      </nav>
+    </div>
+
+    <div class="sidebar-foot">
+      Project 4471 — Niagara WTP<br>Upgrade Phase 2
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div>
+        <div class="proj-eyebrow">PROJECT 4471 · CONTRACT ADMINISTRATION</div>
+        <h1>Niagara WTP Upgrade — Phase 2</h1>
+        <div class="proj-sub">General Contractor: Bridgeview Construction Ltd. · PM: T. Paulo</div>
+      </div>
+      <div class="topbar-right">
+        <div class="pill live">Synced 4 min ago</div>
+        <div class="pill">Week 22 of 48</div>
+        <button class="btn">+ New Item</button>
+      </div>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi" style="--kpi-accent: var(--blueprint)">
+        <div class="kpi-label">Open RFIs</div>
+        <div class="kpi-value">7</div>
+        <div class="kpi-delta">2 pending for 5+ days</div>
+      </div>
+      <div class="kpi" style="--kpi-accent: var(--danger)">
+        <div class="kpi-label">Overdue RFIs</div>
+        <div class="kpi-value">2</div>
+        <div class="kpi-delta warn">▲ avg. delay: 6.5 days</div>
+      </div>
+      <div class="kpi" style="--kpi-accent: var(--amber)">
+        <div class="kpi-label">Submittals in review</div>
+        <div class="kpi-value">3 <small>/ 18</small></div>
+        <div class="kpi-delta">next deadline: 2 days</div>
+      </div>
+      <div class="kpi" style="--kpi-accent: var(--success)">
+        <div class="kpi-label">Approved this month</div>
+        <div class="kpi-value">11</div>
+        <div class="kpi-delta ok">▲ 38% vs. last month</div>
+      </div>
+      <div class="kpi" style="--kpi-accent: var(--muted-2)">
+        <div class="kpi-label">Change orders (PCO)</div>
+        <div class="kpi-value">4 <small>active</small></div>
+        <div class="kpi-delta">CAD $186,400 under review</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <div class="panel">
+          <div class="panel-head">
+            <h2>RFI Log</h2>
+            <span class="count">7 open · 24 total</span>
+          </div>
+          <div class="tab-row">
+            <div class="tab active">All</div>
+            <div class="tab">Open</div>
+            <div class="tab">Overdue</div>
+            <div class="tab">Closed</div>
+          </div>
+          <table>
+            <thead>
+              <tr><th>ID</th><th>Description</th><th>Assigned to</th><th>Days open</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="id-cell">RFI-118</td>
+                <td class="desc">Expansion joint specification — Block B</td>
+                <td class="who">Structural Eng.</td>
+                <td class="days late">11 days</td>
+                <td><span class="stamp overdue">Overdue</span></td>
+              </tr>
+              <tr>
+                <td class="id-cell">RFI-117</td>
+                <td class="desc">Electrical/mechanical drawing conflict — pump room</td>
+                <td class="who">Mechanical Eng.</td>
+                <td class="days late">9 days</td>
+                <td><span class="stamp overdue">Overdue</span></td>
+              </tr>
+              <tr>
+                <td class="id-cell">RFI-116</td>
+                <td class="desc">Elevation confirmation — east foundation</td>
+                <td class="who">Survey</td>
+                <td class="days">4 days</td>
+                <td><span class="stamp review">In review</span></td>
+              </tr>
+              <tr>
+                <td class="id-cell">RFI-115</td>
+                <td class="desc">Material substitution — tank lining</td>
+                <td class="who">Architecture</td>
+                <td class="days">2 days</td>
+                <td><span class="stamp open">Open</span></td>
+              </tr>
+              <tr>
+                <td class="id-cell">RFI-114</td>
+                <td class="desc">Anchoring detail — pipe support</td>
+                <td class="who">Structural Eng.</td>
+                <td class="days">—</td>
+                <td><span class="stamp approved">Answered</span></td>
+              </tr>
+              <tr>
+                <td class="id-cell">RFI-113</td>
+                <td class="desc">Construction sequencing clarification — phase 2A</td>
+                <td class="who">PM</td>
+                <td class="days">—</td>
+                <td><span class="stamp closed">Closed</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Submittal Log</h2>
+            <span class="count">3 in review · 18 total</span>
+          </div>
+          <table>
+            <thead>
+              <tr><th>ID</th><th>Item</th><th>Supplier</th><th>Progress</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="id-cell">SUB-042</td>
+                <td class="desc">Centrifugal pumps — data sheet</td>
+                <td class="who">HydroTech Supply</td>
+                <td><span class="bar-track"><span class="bar-fill" style="width:70%"></span></span>2/3</td>
+                <td><span class="stamp review">In review</span></td>
+              </tr>
+              <tr>
+                <td class="id-cell">SUB-041</td>
+                <td class="desc">Control valves — shop drawing</td>
+                <td class="who">Flowmaster Inc.</td>
+                <td><span class="bar-track"><span class="bar-fill" style="width:35%"></span></span>1/3</td>
+                <td><span class="stamp review">In review</span></td>
+              </tr>
+              <tr>
+                <td class="id-cell">SUB-040</td>
+                <td class="desc">Main electrical panel — specification</td>
+                <td class="who">Ontario Electric</td>
+                <td><span class="bar-track"><span class="bar-fill" style="width:100%"></span></span>3/3</td>
+                <td><span class="stamp approved">Approved</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div>
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Recent Activity</h2>
+          </div>
+          <div class="activity-item">
+            <div class="dot red"></div>
+            <div>
+              <div class="act-text"><b>RFI-118</b> passed its response deadline</div>
+              <div class="act-time">Today, 8:12 AM</div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="dot green"></div>
+            <div>
+              <div class="act-text"><b>SUB-040</b> approved by Ontario Electric</div>
+              <div class="act-time">Yesterday, 4:40 PM</div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="dot amber"></div>
+            <div>
+              <div class="act-text"><b>PCO-009</b> sent for cost evaluation</div>
+              <div class="act-time">Yesterday, 11:05 AM</div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="dot blue"></div>
+            <div>
+              <div class="act-text"><b>RFI-116</b> updated by Survey</div>
+              <div class="act-time">2 days ago</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Upcoming Deadlines</h2>
+          </div>
+          <div class="deadline-row">
+            <span>SUB-042 — final review</span>
+            <span class="days late">in 2 days</span>
+          </div>
+          <div class="deadline-row">
+            <span>RFI-115 — response due</span>
+            <span class="days">in 5 days</span>
+          </div>
+          <div class="deadline-row">
+            <span>PCO-009 — client decision</span>
+            <span class="days">in 8 days</span>
+          </div>
+          <div class="deadline-row">
+            <span>Monthly report — WSP</span>
+            <span class="days">in 10 days</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-note">SITE LOG · Construction Administration Tracker — portfolio prototype, sample data</div>
+  </main>
+</div>
+</body>
+</html>
