@@ -62,7 +62,7 @@ export async function createSubmittal(formData: FormData): Promise<ActionResult>
     .insert({ project_id: projectId, ...parsed.values });
   if (error) return { ok: false, error: error.message };
 
-  revalidatePath("/submittals");
+  revalidatePath(`/projects/${projectId}/submittals`);
   return { ok: true };
 }
 
@@ -77,12 +77,16 @@ export async function updateSubmittal(formData: FormData): Promise<ActionResult>
   if (!SUBMITTAL_STATUS_FLOW.includes(status))
     return { ok: false, error: "Invalid status." };
 
-  const { error } = await getSupabase()
+  const supabase = getSupabase();
+  const { data: updated, error } = await supabase
     .from("submittals")
     .update({ ...parsed.values, status })
-    .eq("id", id);
+    .eq("id", id)
+    .select("project_id")
+    .maybeSingle<{ project_id: string }>();
   if (error) return { ok: false, error: error.message };
+  if (!updated) return { ok: false, error: "Submittal not found." };
 
-  revalidatePath("/submittals");
+  revalidatePath(`/projects/${updated.project_id}/submittals`);
   return { ok: true };
 }

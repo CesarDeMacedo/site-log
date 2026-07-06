@@ -40,8 +40,18 @@ Track RFIs, Submittals, and Change Orders on a construction project. See `PRD.md
 - `/rfis` — full RFI CRUD: create, list with filter tabs (All / Open / Overdue / Closed), edit, and status updates, with automatic days-open and overdue calculation
 - `/submittals` — full Submittal CRUD with review-step progress (e.g. 2/3), overdue calculation, and auto-numbering (SUB-XXX)
 - `/change-orders` — full Change Order CRUD with estimated cost (CAD) and auto-numbering (PCO-XXX)
-- `/` — Overview dashboard: KPI cards, log previews, Recent Activity, Upcoming Deadlines
-- `/export` — on-demand CSV downloads of all three logs, with derived days-open/overdue columns
+- Multi-project support: `/projects` portfolio list + create form, per-project routes (`/projects/[projectId]/...`), and a sidebar project selector that preserves the current screen when switching
+- `/projects/[projectId]` — Overview dashboard: KPI cards, log previews, Recent Activity, Upcoming Deadlines
+- `/projects/[projectId]/export` — on-demand CSV downloads of the project's logs, with derived days-open/overdue columns
+
+## End-to-end test
+
+`scripts/e2e-multiproject.mjs` drives the running app (port 3789) with Playwright against the system Edge browser and verifies project creation, per-project numbering, and data isolation across all screens:
+
+```sh
+npm run start -- -p 3789   # in one terminal
+node scripts/e2e-multiproject.mjs
+```
 
 ## Deployment
 

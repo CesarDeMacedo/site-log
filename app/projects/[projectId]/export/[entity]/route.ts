@@ -17,20 +17,17 @@ export const dynamic = "force-dynamic";
 const ENTITIES = {
   rfis: {
     table: "rfis",
-    orderBy: "created_at",
     headers: RFI_EXPORT_HEADERS,
     toRows: (data: unknown[], today: string) => rfiExportRows(data as Rfi[], today),
   },
   submittals: {
     table: "submittals",
-    orderBy: "created_at",
     headers: SUBMITTAL_EXPORT_HEADERS,
     toRows: (data: unknown[], today: string) =>
       submittalExportRows(data as Submittal[], today),
   },
   "change-orders": {
     table: "change_orders",
-    orderBy: "created_at",
     headers: CHANGE_ORDER_EXPORT_HEADERS,
     toRows: (data: unknown[]) => changeOrderExportRows(data as ChangeOrder[]),
   },
@@ -40,9 +37,9 @@ type EntityKey = keyof typeof ENTITIES;
 
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ entity: string }> },
+  { params }: { params: Promise<{ projectId: string; entity: string }> },
 ) {
-  const { entity } = await params;
+  const { projectId, entity } = await params;
   const config = ENTITIES[entity as EntityKey];
   if (!config) {
     return NextResponse.json({ error: "Unknown export" }, { status: 404 });
@@ -55,21 +52,17 @@ export async function GET(
   const { data: project, error: projectError } = await supabase
     .from("projects")
     .select("id")
-    .order("created_at", { ascending: true })
-    .limit(1)
+    .eq("id", projectId)
     .maybeSingle<{ id: string }>();
   if (projectError || !project) {
-    return NextResponse.json(
-      { error: projectError?.message ?? "No project found" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
   const { data, error } = await supabase
     .from(config.table)
     .select("*")
     .eq("project_id", project.id)
-    .order(config.orderBy, { ascending: true });
+    .order("created_at", { ascending: true });
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

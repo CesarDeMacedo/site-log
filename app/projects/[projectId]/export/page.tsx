@@ -1,17 +1,9 @@
-import { getSupabase, isSupabaseConfigured } from "@/lib/supabase/server";
+import { Notice, SetupNotice } from "@/components/notice";
+import { getProjectOr404 } from "@/lib/get-project";
 import { todayISO } from "@/lib/dates";
-import type { Project } from "@/lib/types";
+import { getSupabase, isSupabaseConfigured } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
-
-function Notice({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-lg border border-line bg-surface px-6 py-8">
-      <h2 className="mb-2 font-display text-lg font-semibold">{title}</h2>
-      <p className="text-[13.5px] leading-relaxed text-muted">{children}</p>
-    </div>
-  );
-}
 
 interface ExportRow {
   title: string;
@@ -20,35 +12,16 @@ interface ExportRow {
   href: string;
 }
 
-export default async function ExportPage() {
-  if (!isSupabaseConfigured()) {
-    return (
-      <Notice title="Supabase not configured">
-        Copy <code className="font-mono text-blueprint">.env.example</code> to{" "}
-        <code className="font-mono text-blueprint">.env.local</code> and fill in your
-        Supabase project URL and anon key, then restart the dev server.
-      </Notice>
-    );
-  }
+export default async function ExportPage({
+  params,
+}: {
+  params: Promise<{ projectId: string }>;
+}) {
+  if (!isSupabaseConfigured()) return <SetupNotice />;
 
+  const { projectId } = await params;
+  const project = await getProjectOr404(projectId);
   const supabase = getSupabase();
-  const { data: project, error: projectError } = await supabase
-    .from("projects")
-    .select("*")
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle<Project>();
-
-  if (projectError) return <Notice title="Database error">{projectError.message}</Notice>;
-  if (!project) {
-    return (
-      <Notice title="No project found">
-        Run the migration and seed in{" "}
-        <code className="font-mono text-blueprint">supabase/</code> against your
-        Supabase project first.
-      </Notice>
-    );
-  }
 
   const [rfis, submittals, changeOrders] = await Promise.all([
     supabase.from("rfis").select("id", { count: "exact", head: true }).eq("project_id", project.id),
@@ -60,26 +33,27 @@ export default async function ExportPage() {
   if (firstError) return <Notice title="Database error">{firstError.message}</Notice>;
 
   const today = todayISO();
+  const base = `/projects/${project.id}/export`;
   const exports: ExportRow[] = [
     {
       title: "RFI Log",
       description:
         "All RFIs with dates, status, and the computed days-open and overdue flags.",
       count: rfis.count ?? 0,
-      href: "/export/rfis",
+      href: `${base}/rfis`,
     },
     {
       title: "Submittal Log",
       description:
         "All submittals with supplier, review progress, due date, and overdue flag.",
       count: submittals.count ?? 0,
-      href: "/export/submittals",
+      href: `${base}/submittals`,
     },
     {
       title: "Change Orders (PCO)",
       description: "All change orders with estimated cost (CAD) and status.",
       count: changeOrders.count ?? 0,
-      href: "/export/change-orders",
+      href: `${base}/change-orders`,
     },
   ];
 
@@ -93,7 +67,7 @@ export default async function ExportPage() {
           {project.name}
         </h1>
         <div className="text-[13px] text-muted">
-          Download the current logs as CSV for client updates and reporting.
+          Download this project&apos;s logs as CSV for client updates and reporting.
         </div>
       </div>
 

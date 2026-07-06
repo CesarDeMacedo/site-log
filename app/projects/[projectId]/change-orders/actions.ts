@@ -49,7 +49,7 @@ export async function createChangeOrder(formData: FormData): Promise<ActionResul
     .insert({ project_id: projectId, ...parsed.values });
   if (error) return { ok: false, error: error.message };
 
-  revalidatePath("/change-orders");
+  revalidatePath(`/projects/${projectId}/change-orders`);
   return { ok: true };
 }
 
@@ -64,12 +64,16 @@ export async function updateChangeOrder(formData: FormData): Promise<ActionResul
   if (!CHANGE_ORDER_STATUS_FLOW.includes(status))
     return { ok: false, error: "Invalid status." };
 
-  const { error } = await getSupabase()
+  const supabase = getSupabase();
+  const { data: updated, error } = await supabase
     .from("change_orders")
     .update({ ...parsed.values, status })
-    .eq("id", id);
+    .eq("id", id)
+    .select("project_id")
+    .maybeSingle<{ project_id: string }>();
   if (error) return { ok: false, error: error.message };
+  if (!updated) return { ok: false, error: "Change order not found." };
 
-  revalidatePath("/change-orders");
+  revalidatePath(`/projects/${updated.project_id}/change-orders`);
   return { ok: true };
 }

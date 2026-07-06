@@ -24,38 +24,37 @@ const plexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: "Site Log — Construction Administration Tracker",
   description:
-    "Track RFIs, Submittals, and Change Orders on a construction project.",
+    "Track RFIs, Submittals, and Change Orders across construction projects.",
 };
 
-// Data is fetched fresh on every request (single-project MVP, no caching yet).
+// Data is fetched fresh on every request (no caching yet).
 export const dynamic = "force-dynamic";
 
-async function fetchProject(): Promise<Project | null> {
-  if (!isSupabaseConfigured()) return null;
+async function fetchProjects(): Promise<Project[]> {
+  if (!isSupabaseConfigured()) return [];
   try {
     const { data } = await getSupabase()
       .from("projects")
       .select("*")
       .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
-    return (data as Project | null) ?? null;
+      .returns<Project[]>();
+    return data ?? [];
   } catch {
-    return null;
+    return [];
   }
 }
 
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const project = await fetchProject();
+  const projects = await fetchProjects();
   return (
     <html lang="en">
       <body
         className={`${oswald.variable} ${plexSans.variable} ${plexMono.variable}`}
       >
         <div className="flex min-h-screen">
-          <Sidebar project={project} />
+          <Sidebar projects={projects} />
           <main className="max-w-[1360px] flex-1 px-[30px] pb-10 pt-6">
             {children}
           </main>

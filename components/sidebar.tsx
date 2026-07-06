@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { pathForProject, projectIdFromPath } from "@/lib/paths";
 import type { Project } from "@/lib/types";
 
 interface NavEntry {
   label: string;
-  href?: string; // no href = not built yet
+  sub: string; // sub-route within a project ("" = dashboard)
   icon: React.ReactNode;
 }
 
@@ -21,7 +22,7 @@ const iconProps = {
 const PROJECT_NAV: NavEntry[] = [
   {
     label: "Overview",
-    href: "/",
+    sub: "",
     icon: (
       <svg {...iconProps}>
         <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -31,7 +32,7 @@ const PROJECT_NAV: NavEntry[] = [
   },
   {
     label: "RFI Log",
-    href: "/rfis",
+    sub: "/rfis",
     icon: (
       <svg {...iconProps}>
         <path d="M12 2l9 4.9V17L12 22 3 17V6.9z" />
@@ -41,7 +42,7 @@ const PROJECT_NAV: NavEntry[] = [
   },
   {
     label: "Submittals",
-    href: "/submittals",
+    sub: "/submittals",
     icon: (
       <svg {...iconProps}>
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -51,7 +52,7 @@ const PROJECT_NAV: NavEntry[] = [
   },
   {
     label: "Change Orders",
-    href: "/change-orders",
+    sub: "/change-orders",
     icon: (
       <svg {...iconProps}>
         <path d="M12 2v20M2 12h20" />
@@ -63,7 +64,7 @@ const PROJECT_NAV: NavEntry[] = [
 const REPORT_NAV: NavEntry[] = [
   {
     label: "Export / Share",
-    href: "/export",
+    sub: "/export",
     icon: (
       <svg {...iconProps}>
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -72,23 +73,36 @@ const REPORT_NAV: NavEntry[] = [
   },
 ];
 
-function NavItem({ entry, active }: { entry: NavEntry; active: boolean }) {
+function NavItem({
+  entry,
+  projectId,
+  pathname,
+}: {
+  entry: NavEntry;
+  projectId: string | null;
+  pathname: string;
+}) {
   const base =
     "flex items-center gap-2.5 rounded-md px-2.5 py-[9px] text-[13.5px] transition-colors";
-  if (!entry.href) {
+  if (!projectId) {
     return (
-      <div className={`${base} cursor-default text-muted-2`} title="Coming soon">
+      <div
+        className={`${base} cursor-default text-muted-2`}
+        title="Select a project first"
+      >
         <span className="opacity-60">{entry.icon}</span>
         {entry.label}
-        <span className="ml-auto font-mono text-[9.5px] tracking-widest text-muted-2/80">
-          SOON
-        </span>
       </div>
     );
   }
+  const href = `/projects/${projectId}${entry.sub}`;
+  const active =
+    entry.sub === ""
+      ? pathname === href
+      : pathname === href || pathname.startsWith(`${href}/`);
   return (
     <Link
-      href={entry.href}
+      href={href}
       className={
         active
           ? `${base} border-l-2 border-blueprint bg-blueprint/12 pl-2 text-text [&_svg]:stroke-blueprint`
@@ -101,10 +115,13 @@ function NavItem({ entry, active }: { entry: NavEntry; active: boolean }) {
   );
 }
 
-export function Sidebar({ project }: { project: Project | null }) {
+export function Sidebar({ projects }: { projects: Project[] }) {
   const pathname = usePathname();
-  const isActive = (href: string) =>
-    href === "/" ? pathname === "/" : pathname.startsWith(href);
+  const router = useRouter();
+  const projectId = projectIdFromPath(pathname);
+  const knownProjectId = projects.some((p) => p.id === projectId)
+    ? projectId
+    : null;
 
   return (
     <aside className="flex w-[232px] shrink-0 flex-col gap-[26px] border-r border-line bg-surface px-4 py-[22px]">
@@ -122,6 +139,28 @@ export function Sidebar({ project }: { project: Project | null }) {
 
       <div>
         <div className="mb-0.5 px-2.5 text-[10px] font-semibold tracking-[1.6px] text-muted-2">
+          PORTFOLIO
+        </div>
+        <nav className="flex flex-col gap-0.5">
+          <Link
+            href="/projects"
+            className={`flex items-center gap-2.5 rounded-md px-2.5 py-[9px] text-[13.5px] transition-colors ${
+              pathname === "/projects"
+                ? "border-l-2 border-blueprint bg-blueprint/12 pl-2 text-text [&_svg]:stroke-blueprint"
+                : "text-muted hover:text-text [&_svg]:opacity-75"
+            }`}
+          >
+            <svg {...iconProps}>
+              <path d="M3 7l9-4 9 4v10l-9 4-9-4z" />
+              <path d="M3 7l9 4 9-4M12 11v10" />
+            </svg>
+            All Projects
+          </Link>
+        </nav>
+      </div>
+
+      <div>
+        <div className="mb-0.5 px-2.5 text-[10px] font-semibold tracking-[1.6px] text-muted-2">
           PROJECT
         </div>
         <nav className="flex flex-col gap-0.5">
@@ -129,7 +168,8 @@ export function Sidebar({ project }: { project: Project | null }) {
             <NavItem
               key={entry.label}
               entry={entry}
-              active={entry.href ? isActive(entry.href) : false}
+              projectId={knownProjectId}
+              pathname={pathname}
             />
           ))}
         </nav>
@@ -144,14 +184,38 @@ export function Sidebar({ project }: { project: Project | null }) {
             <NavItem
               key={entry.label}
               entry={entry}
-              active={entry.href ? isActive(entry.href) : false}
+              projectId={knownProjectId}
+              pathname={pathname}
             />
           ))}
         </nav>
       </div>
 
-      <div className="mt-auto border-t border-line pt-3.5 text-[11.5px] leading-relaxed text-muted-2">
-        {project ? project.name : "No project configured"}
+      <div className="mt-auto border-t border-line pt-3.5">
+        <label
+          htmlFor="project-selector"
+          className="mb-1.5 block px-0.5 text-[10px] font-semibold tracking-[1.6px] text-muted-2"
+        >
+          ACTIVE PROJECT
+        </label>
+        <select
+          id="project-selector"
+          value={knownProjectId ?? ""}
+          onChange={(e) => {
+            const id = e.target.value;
+            if (id) router.push(pathForProject(pathname, id));
+          }}
+          className="w-full rounded-md border border-line bg-surface-2 px-2 py-1.5 text-[12px] text-text focus:border-blueprint focus:outline-none"
+        >
+          <option value="" disabled>
+            {projects.length ? "Select a project…" : "No projects yet"}
+          </option>
+          {projects.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
       </div>
     </aside>
   );

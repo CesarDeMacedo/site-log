@@ -60,7 +60,7 @@ export async function createRfi(formData: FormData): Promise<ActionResult> {
     .insert({ project_id: projectId, ...parsed.values });
   if (error) return { ok: false, error: error.message };
 
-  revalidatePath("/rfis");
+  revalidatePath(`/projects/${projectId}/rfis`);
   return { ok: true };
 }
 
@@ -78,9 +78,9 @@ export async function updateRfi(formData: FormData): Promise<ActionResult> {
   const supabase = getSupabase();
   const { data: current, error: fetchError } = await supabase
     .from("rfis")
-    .select("date_answered")
+    .select("date_answered, project_id")
     .eq("id", id)
-    .maybeSingle();
+    .maybeSingle<{ date_answered: string | null; project_id: string }>();
   if (fetchError) return { ok: false, error: fetchError.message };
   if (!current) return { ok: false, error: "RFI not found." };
 
@@ -99,6 +99,6 @@ export async function updateRfi(formData: FormData): Promise<ActionResult> {
     .eq("id", id);
   if (error) return { ok: false, error: error.message };
 
-  revalidatePath("/rfis");
+  revalidatePath(`/projects/${current.project_id}/rfis`);
   return { ok: true };
 }
