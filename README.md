@@ -43,6 +43,15 @@ Track RFIs, Submittals, and Change Orders on a construction project. See `PRD.md
 - `/` — Overview dashboard: KPI cards, log previews, Recent Activity, Upcoming Deadlines
 - `/export` — on-demand CSV downloads of all three logs, with derived days-open/overdue columns
 
+## Deployment
+
+Production runs on Vercel at **https://site-log-sage.vercel.app**, auto-deployed from pushes to `main`. Supabase migrations are also applied automatically on push via the Supabase GitHub integration — do not run `supabase db push` manually against production.
+
+## Known limitations (accepted for the seed-data demo)
+
+- **No auth + permissive RLS**: the MVP has no login (per SPEC §5), and all tables have permissive Row Level Security policies for the `anon` key — anyone with the public URL can read *and write* all data. This is acceptable for a portfolio demo running seed data, but **must be revisited (real auth + owner-scoped RLS policies) before any real client data goes in**.
+- Timestamps and "days open" are computed with the server clock (UTC on Vercel), so values near midnight can differ by one day from a viewer's local timezone.
+
 ## Build order (SPEC.md §6)
 
 1. ✅ Scaffold + Supabase connection
