@@ -47,5 +47,5 @@ Track RFIs, Submittals, and Change Orders on a construction project. See `PRD.md
 2. ✅ Schema migration
 3. ✅ RFI Log (validates the pattern)
 4. ✅ Submittal Log and Change Order Log
-5. ⬜ Overview dashboard
+5. ✅ Overview dashboard
 6. ⬜ CSV export / import
