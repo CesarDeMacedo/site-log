@@ -38,12 +38,14 @@ Track RFIs, Submittals, and Change Orders on a construction project. See `PRD.md
 - Full scaffold (Next.js App Router, Tailwind v4 design tokens, Supabase client)
 - Database schema as a reproducible SQL migration, with triggers for per-project auto-numbering (RFI-119, SUB-043, …), `updated_at` maintenance, and the activity log
 - `/rfis` — full RFI CRUD: create, list with filter tabs (All / Open / Overdue / Closed), edit, and status updates, with automatic days-open and overdue calculation
+- `/submittals` — full Submittal CRUD with review-step progress (e.g. 2/3), overdue calculation, and auto-numbering (SUB-XXX)
+- `/change-orders` — full Change Order CRUD with estimated cost (CAD) and auto-numbering (PCO-XXX)
 
 ## Build order (SPEC.md §6)
 
 1. ✅ Scaffold + Supabase connection
 2. ✅ Schema migration
 3. ✅ RFI Log (validates the pattern)
-4. ⬜ Submittal Log and Change Order Log
+4. ✅ Submittal Log and Change Order Log
 5. ⬜ Overview dashboard
 6. ⬜ CSV export / import
