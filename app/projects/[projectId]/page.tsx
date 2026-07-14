@@ -192,6 +192,13 @@ export default async function ProjectDashboardPage({
               .join(" · ")}
           </div>
         </div>
+        <a
+          href={`/projects/${project.id}/report`}
+          download
+          className="rounded-md bg-blueprint-dim px-4 py-2 text-[13px] font-semibold text-white hover:brightness-110"
+        >
+          Export Report ↓
+        </a>
       </div>
 
       <div className="mb-[22px] grid grid-cols-2 gap-3 xl:grid-cols-3">

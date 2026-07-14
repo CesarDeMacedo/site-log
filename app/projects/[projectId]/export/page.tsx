@@ -10,6 +10,7 @@ interface ExportRow {
   description: string;
   count: number;
   href: string;
+  cta: string;
 }
 
 export default async function ExportPage({
@@ -39,6 +40,15 @@ export default async function ExportPage({
         "All RFIs with dates, status, and the computed days-open and overdue flags.",
       count: rfis.count ?? 0,
       href: `${base}/rfis`,
+      cta: "Download CSV",
+    },
+    {
+      title: "RFI Report (PDF)",
+      description:
+        "Formatted client-facing report: summary, status breakdown, and the full RFI table.",
+      count: rfis.count ?? 0,
+      href: `/projects/${project.id}/report`,
+      cta: "Download PDF",
     },
   ];
 
@@ -80,7 +90,7 @@ export default async function ExportPage({
                 download
                 className="rounded-md bg-blueprint-dim px-4 py-2 text-[13px] font-semibold text-white hover:brightness-110"
               >
-                Download CSV
+                {e.cta}
               </a>
             </div>
           </div>
