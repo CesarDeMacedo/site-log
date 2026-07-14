@@ -1,16 +1,15 @@
-# Technical Spec — Site Log: Construction Administration Tracker
+# Technical Spec — RFI Log: Construction Administration Tracker
 
-Reference: see PRD.md for product context and scope. This document defines the technical implementation for the MVP.
+Reference: see PRD.md for the original product vision (written pre-rename as "Site Log", with a three-entity scope). After industry feedback (WSP) the product was renamed **RFI Log** and the UI narrowed to RFIs only — Submittals and Change Orders remain in the schema with no UI. This document reflects the implementation as built.
 
 ## 1. Tech stack
 
 - **Framework:** Next.js (App Router) + TypeScript
-- **Styling:** Tailwind CSS
-- **Database + Auth:** Supabase (Postgres)
-- **Hosting:** Vercel (free tier is sufficient for MVP/portfolio use)
-- **Charts (if needed for dashboard):** Recharts
-
-Rationale: this stack has generous free tiers, is well-documented for AI coding agents (Claude Code has strong familiarity with Next.js + Supabase patterns), and matches what's covered in the vibe coding course already in progress.
+- **Styling:** Tailwind CSS v4
+- **Database + Auth:** Supabase (Postgres; email/password auth via `@supabase/ssr` with cookie-bound sessions)
+- **PDF report:** `@react-pdf/renderer` (server-side, in a route handler)
+- **Spreadsheets:** SheetJS `xlsx` 0.20.x from the official SheetJS CDN tarball (the npm package is frozen at 0.18.5 with known CVEs)
+- **Hosting:** Vercel (auto-deploy from `main`; Supabase GitHub integration applies migrations on push)
 
 ## 2. Data model
 
@@ -42,6 +41,10 @@ Rationale: this stack has generous free tiers, is well-documented for AI coding 
 | updated_at | timestamptz | default now(), update on change |
 
 **Derived (not stored):** `days_open` = today − date_submitted (if not closed/answered). `is_overdue` = status not in (`answered`,`closed`) AND due_date < today.
+
+### `submittals` and `change_orders` (schema only — no UI)
+
+Both tables, their triggers (auto-numbering, activity log), and the `lib/` logic remain in place, but every UI surface (routes, nav, dashboard cards, exports) was removed in the RFI-only refocus. Re-enabling them is a UI-only task.
 
 ### `submittals`
 | Field | Type | Notes |
@@ -83,27 +86,31 @@ Populate `activity_log` via a Postgres trigger or application-level insert on ev
 
 ## 3. Screens / routes
 
+All routes except `/`, `/login`, and `/signup` require a session — `middleware.ts` redirects anonymous requests to `/login`. The app screens live under the `(app)` route group, which provides the sidebar layout.
+
 | Route | Purpose |
 |---|---|
-| `/` | Redirect: to `/projects/[projectId]` when exactly one project exists, otherwise to `/projects` |
+| `/` | Public product landing page (hero, feature cards, sign-in CTA) |
+| `/login`, `/signup` | Email/password auth (Supabase Auth); signed-in users are redirected to `/projects` |
 | `/projects` | Project list ("portfolio") + create-new-project form (name, general contractor, PM name) |
-| `/projects/[projectId]` | Overview dashboard for one project — KPI cards, RFI log preview, Submittal log preview, Recent Activity, Upcoming Deadlines |
-| `/projects/[projectId]/rfis` | Full RFI Log — table with filter tabs (All / Open / Overdue / Closed), create/edit modal |
-| `/projects/[projectId]/submittals` | Full Submittal Log — table + create/edit modal |
-| `/projects/[projectId]/change-orders` | Change Order log — table + create/edit modal |
-| `/projects/[projectId]/export` | Simple CSV export of that project's logs |
+| `/projects/[projectId]` | Overview dashboard — RFI KPI cards, RFI log preview, Recent Activity, Upcoming Deadlines, Export Report button |
+| `/projects/[projectId]/rfis` | Full RFI Log — table with filter tabs (All / Open / Overdue / Closed), Links column, create/edit modal (contractor dropdown + URL fields) |
+| `/projects/[projectId]/export` | Export / Import / Share — CSV + XLSX downloads, PDF report row, and the spreadsheet import flow (preview → confirm) |
+| `/projects/[projectId]/export/rfis` | CSV download route; `?format=xlsx` for Excel |
+| `/projects/[projectId]/report` | Client-ready PDF report (server-rendered) |
+| `/rfis`, `/export`, … | Legacy flat routes redirect into the single project when unambiguous, else `/projects` |
 
 A project selector in the sidebar allows switching projects from anywhere, preserving the current sub-route (e.g. switching projects while on the RFI Log lands on the other project's RFI Log). Every entity query filters by the `projectId` from the URL — data from different projects must never mix.
 
-## 3b. Spreadsheet import (RFI Log and Submittal Log)
+## 3b. Spreadsheet import (RFI Log)
 
 Two-phase approach:
 
-**Phase 1 (MVP) — fixed-template import:**
-- Provide a downloadable CSV/XLSX template matching the exact column names used in the `rfis` / `submittals` tables (see Section 2).
-- User uploads a file in that format on `/rfis` or `/submittals`.
-- Parse with SheetJS (`xlsx` npm package) client-side, validate rows (required fields present, valid dates, valid status values), show a preview with any rows that failed validation flagged before committing.
-- On confirm, bulk-insert valid rows into Supabase.
+**Phase 1 — fixed-format import (✅ implemented, RFIs only):**
+- The import format is the export format: the same headers the CSV/XLSX export produces (derived columns like "Days Open" are accepted and ignored), so a downloaded export is the template.
+- Upload on `/projects/[projectId]/export` ("Import RFIs" card, `.xlsx` or `.csv`).
+- Parsed and validated **server-side** (SheetJS in a server action — `lib/import-logic.ts`): required fields, valid dates (ISO strings or Excel date cells), valid status (label or key), http(s) links, duplicate RFI numbers against the project and within the file. Per-row preview (valid / error / duplicate) before anything is written.
+- On explicit confirm, rows are re-validated server-side and bulk-inserted. Imports are additive — duplicates are skipped, never overwritten. Limits: 2 MB, 500 rows.
 
 **Phase 2 (post-MVP) — flexible column mapping:**
 - User uploads their own spreadsheet as-is, with whatever column headers they already use.
@@ -117,34 +124,22 @@ Do not build Phase 2 until Phase 1 (manual CRUD + fixed-template import) is work
 
 - **Overdue calculation:** compute server-side (or in a shared utility function) so it's consistent everywhere: `is_overdue = due_date < today AND status NOT IN (closed_states for that entity)`.
 - **RFI/Submittal/PCO numbering:** auto-generate the next number per project (e.g. `RFI-119`) on insert — don't require the user to type it manually.
-- **Status transitions:** keep them simple linear paths for MVP (no complex workflow engine):
+- **Status transitions:** simple linear paths (no workflow engine):
   - RFI: `open → in_review → answered → closed`
-  - Submittal: `open → in_review → approved` (or `rejected`, which loops back to `open`)
-  - Change Order: `draft → submitted → under_review → approved` (or `rejected`)
+  - Submittal / Change Order: enums remain in the schema but have no UI (see §2)
 
 ## 5. Non-functional requirements
 
 - Responsive down to tablet width at minimum (construction PMs often use tablets on site); mobile-friendly is a bonus, not required for MVP.
-- Auth: Supabase Auth with email + password (migration 0003). All app routes require a session (middleware redirects to /login); the landing page is public. RLS policies allow any authenticated user full read/write — no per-owner isolation, no roles (future phase if needed).
+- Auth: Supabase Auth with email + password (migration 0003). All app routes require a session (middleware redirects to /login); the landing page is public. RLS policies allow any authenticated user full read/write — no per-owner isolation, no roles, and signup is open to anyone with the URL (invites/password recovery are a future phase). "Confirm email" should be disabled in the Supabase dashboard (manual step; the signup UI handles both modes).
 - Keep the visual language from the existing mockup (dark theme, blueprint-blue accent, "stamp" style status badges) — this is already validated and should carry into the real build.
 
-## 6. Suggested build order (for Claude Code sessions)
+## 6. Build history
 
-1. Scaffold Next.js + Tailwind + Supabase connection.
-2. Create Supabase tables per the schema above (as a SQL migration file, not manual dashboard clicks — keeps it reproducible).
-3. Build the RFI Log page first (full CRUD) — it's the most complex entity and validates the pattern for the other two.
-4. Build Submittal Log and Change Order log reusing the same patterns.
-5. Build the Overview dashboard last, since it aggregates data from all three entities.
-6. Add CSV export.
+1. ✅ Scaffold + Supabase connection, schema migration (0001), RFI/Submittal/Change Order CRUD, Overview dashboard, CSV export, multi-project support
+2. ✅ WSP feedback round: rename to RFI Log, Submittals/Change Orders removed from UI, contractor dropdown + Design Package / Blue Bin links (migration 0002)
+3. ✅ Product round: PDF report, XLSX export + validated spreadsheet import, public landing page, Supabase Auth + authenticated-only RLS (migration 0003)
 
-## 7. Suggested `CLAUDE.md` for the repo root
+## 7. `CLAUDE.md`
 
-```markdown
-# Project context for Claude Code
-
-This is Site Log, a Construction Administration tracker (RFIs, Submittals, Change Orders).
-Read PRD.md for product scope and SPEC.md for data model, routes, and business logic before making changes.
-Stack: Next.js (App Router) + TypeScript + Tailwind + Supabase.
-Keep the existing visual style: dark theme, blueprint-blue accent (#4FA6D8), "stamp" style status badges.
-Do not add features outside PRD.md's MVP scope without asking first.
-```
+The repo-root `CLAUDE.md` is the maintained version of the agent context (the draft that used to live here is superseded).
