@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import {
   daysBetween,
+  OTHER_CONTRACTOR,
+  RFI_CONTRACTORS,
   RFI_DISCIPLINES,
   RFI_STATUS_FLOW,
   RFI_STATUS_LABELS,
@@ -18,6 +20,49 @@ const INPUT_CLASS =
   "w-full rounded-md border border-line bg-surface-2 px-3 py-2 text-[13px] text-text placeholder:text-muted-2 focus:border-blueprint focus:outline-none";
 const DATE_CLASS = `${INPUT_CLASS} font-mono text-xs [color-scheme:dark]`;
 
+function UrlField({
+  id,
+  name,
+  label,
+  defaultValue,
+}: {
+  id: string;
+  name: string;
+  label: string;
+  defaultValue: string;
+}) {
+  return (
+    <div>
+      <div className="mb-1.5 flex items-baseline justify-between">
+        <label
+          htmlFor={id}
+          className="block text-[10.5px] font-semibold uppercase tracking-[1.2px] text-muted-2"
+        >
+          {label}
+        </label>
+        {defaultValue && (
+          <a
+            href={defaultValue}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-mono text-[10.5px] text-blueprint hover:underline"
+          >
+            Open ↗
+          </a>
+        )}
+      </div>
+      <input
+        id={id}
+        name={name}
+        type="url"
+        defaultValue={defaultValue}
+        placeholder="https://…"
+        className={`${INPUT_CLASS} font-mono text-xs`}
+      />
+    </div>
+  );
+}
+
 interface RfiFormModalProps {
   projectId: string;
   rfi: Rfi | null; // null = create
@@ -29,6 +74,14 @@ export function RfiFormModal({ projectId, rfi, today, onClose }: RfiFormModalPro
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
+
+  // A saved contractor outside the standard list means "Other…" was used.
+  const isCustomContractor = Boolean(
+    rfi?.contractor && !RFI_CONTRACTORS.includes(rfi.contractor),
+  );
+  const [contractorChoice, setContractorChoice] = useState(
+    isCustomContractor ? OTHER_CONTRACTOR : (rfi?.contractor ?? ""),
+  );
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -132,18 +185,51 @@ export function RfiFormModal({ projectId, rfi, today, onClose }: RfiFormModalPro
               </select>
             </div>
             <div>
-              <label htmlFor="rfi-assigned" className={LABEL_CLASS}>
-                Assigned to
+              <label htmlFor="rfi-contractor" className={LABEL_CLASS}>
+                Contractor
               </label>
-              <input
-                id="rfi-assigned"
-                name="assigned_to"
-                type="text"
-                defaultValue={rfi?.assigned_to ?? ""}
-                placeholder="e.g. Structural Eng."
+              <select
+                id="rfi-contractor"
+                name="contractor_select"
+                value={contractorChoice}
+                onChange={(e) => setContractorChoice(e.target.value)}
                 className={INPUT_CLASS}
-              />
+              >
+                <option value="">—</option>
+                {RFI_CONTRACTORS.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+                <option value={OTHER_CONTRACTOR}>Other…</option>
+              </select>
+              {contractorChoice === OTHER_CONTRACTOR && (
+                <input
+                  name="contractor_custom"
+                  type="text"
+                  required
+                  defaultValue={isCustomContractor ? rfi?.contractor ?? "" : ""}
+                  placeholder="Contractor name"
+                  aria-label="Custom contractor name"
+                  className={`${INPUT_CLASS} mt-1.5`}
+                />
+              )}
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <UrlField
+              id="rfi-link-design"
+              name="link_design_package"
+              label="Link Design Package"
+              defaultValue={rfi?.link_design_package ?? ""}
+            />
+            <UrlField
+              id="rfi-link-bluebin"
+              name="link_blue_bin_section"
+              label="Link Blue Bin Section"
+              defaultValue={rfi?.link_blue_bin_section ?? ""}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">

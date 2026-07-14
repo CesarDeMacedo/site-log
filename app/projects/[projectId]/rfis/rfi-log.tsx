@@ -28,6 +28,32 @@ function statusLabel(status: RfiDisplayStatus): string {
   return status === "overdue" ? "Overdue" : RFI_STATUS_LABELS[status];
 }
 
+// stopPropagation keeps the row's click-to-edit from firing when a link is used.
+function RfiLink({ href, title }: { href: string; title: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={title}
+      aria-label={title}
+      onClick={(e) => e.stopPropagation()}
+      className="text-muted transition-colors hover:text-blueprint"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        className="h-3.5 w-3.5"
+      >
+        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+        <path d="M15 3h6v6M10 14L21 3" />
+      </svg>
+    </a>
+  );
+}
+
 interface RfiLogProps {
   projectId: string;
   rfis: Rfi[];
@@ -98,7 +124,7 @@ export function RfiLog({ projectId, rfis, today }: RfiLogProps) {
           <table className="w-full border-collapse text-[12.5px]">
             <thead>
               <tr>
-                {["ID", "Description", "Discipline", "Assigned to", "Due date", "Days open", "Status"].map(
+                {["ID", "Description", "Discipline", "Contractor", "Links", "Due date", "Days open", "Status"].map(
                   (h) => (
                     <th
                       key={h}
@@ -113,7 +139,7 @@ export function RfiLog({ projectId, rfis, today }: RfiLogProps) {
             <tbody className="[&_tr:last-child_td]:border-b-0">
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-[18px] py-8 text-center text-muted">
+                  <td colSpan={8} className="px-[18px] py-8 text-center text-muted">
                     {rfis.length === 0
                       ? "No RFIs yet — create the first one."
                       : `No ${tab.toLowerCase()} RFIs.`}
@@ -141,7 +167,20 @@ export function RfiLog({ projectId, rfis, today }: RfiLogProps) {
                       {rfi.discipline ?? "—"}
                     </td>
                     <td className="border-b border-line/60 px-[18px] py-[11px] text-xs text-muted">
-                      {rfi.assigned_to ?? "—"}
+                      {rfi.contractor ?? "—"}
+                    </td>
+                    <td className="border-b border-line/60 px-[18px] py-[11px]">
+                      <span className="flex items-center gap-2">
+                        {!rfi.link_design_package && !rfi.link_blue_bin_section && (
+                          <span className="text-xs text-muted">—</span>
+                        )}
+                        {rfi.link_design_package && (
+                          <RfiLink href={rfi.link_design_package} title="Design Package" />
+                        )}
+                        {rfi.link_blue_bin_section && (
+                          <RfiLink href={rfi.link_blue_bin_section} title="Blue Bin Section" />
+                        )}
+                      </span>
                     </td>
                     <td
                       className={`border-b border-line/60 px-[18px] py-[11px] font-mono text-xs ${

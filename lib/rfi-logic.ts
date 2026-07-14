@@ -17,6 +17,18 @@ export const RFI_STATUS_LABELS: Record<RfiStatus, string> = {
   closed: "Closed",
 };
 
+// Sentinel value for the form's contractor dropdown that reveals the
+// free-text "Other" input.
+export const OTHER_CONTRACTOR = "__other__";
+
+export const RFI_CONTRACTORS = [
+  "Contractor 1",
+  "Contractor 2",
+  "Contractor 3",
+  "Contractor 4",
+  "Contractor 5",
+];
+
 export const RFI_DISCIPLINES = [
   "Structural",
   "Mechanical",

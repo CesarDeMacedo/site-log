@@ -14,7 +14,7 @@ values (
 );
 
 insert into public.rfis
-  (project_id, rfi_number, description, discipline, assigned_to,
+  (project_id, rfi_number, description, discipline, contractor,
    date_submitted, due_date, date_answered, status, created_at)
 values
   ('a0000000-0000-4000-8000-000000000001', 'RFI-113',

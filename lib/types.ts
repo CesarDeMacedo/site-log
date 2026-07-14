@@ -21,7 +21,9 @@ export interface Rfi {
   rfi_number: string;
   description: string;
   discipline: string | null;
-  assigned_to: string | null;
+  contractor: string | null;
+  link_design_package: string | null;
+  link_blue_bin_section: string | null;
   date_submitted: string; // yyyy-mm-dd
   due_date: string; // yyyy-mm-dd
   date_answered: string | null; // yyyy-mm-dd

@@ -2,7 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { getSupabase } from "@/lib/supabase/server";
-import { isClosedState, RFI_STATUS_FLOW, todayISO } from "@/lib/rfi-logic";
+import {
+  isClosedState,
+  OTHER_CONTRACTOR,
+  RFI_STATUS_FLOW,
+  todayISO,
+} from "@/lib/rfi-logic";
 import type { RfiStatus } from "@/lib/types";
 
 export interface ActionResult {
@@ -13,21 +18,39 @@ export interface ActionResult {
 interface RfiFormValues {
   description: string;
   discipline: string | null;
-  assigned_to: string | null;
+  contractor: string | null;
+  link_design_package: string | null;
+  link_blue_bin_section: string | null;
   date_submitted: string;
   due_date: string;
 }
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
+function parseOptionalUrl(raw: string): { url: string | null; valid: boolean } {
+  if (!raw) return { url: null, valid: true };
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:")
+      return { url: null, valid: false };
+    return { url: raw, valid: true };
+  } catch {
+    return { url: null, valid: false };
+  }
+}
+
 function parseRfiForm(
   formData: FormData,
 ): { values: RfiFormValues; error?: never } | { values?: never; error: string } {
   const description = String(formData.get("description") ?? "").trim();
   const discipline = String(formData.get("discipline") ?? "").trim();
-  const assigned_to = String(formData.get("assigned_to") ?? "").trim();
+  const contractorSelect = String(formData.get("contractor_select") ?? "").trim();
+  const contractorCustom = String(formData.get("contractor_custom") ?? "").trim();
   const date_submitted = String(formData.get("date_submitted") ?? "").trim();
   const due_date = String(formData.get("due_date") ?? "").trim();
+
+  const contractor =
+    contractorSelect === OTHER_CONTRACTOR ? contractorCustom : contractorSelect;
 
   if (!description) return { error: "Description is required." };
   if (!DATE_RE.test(date_submitted))
@@ -36,11 +59,24 @@ function parseRfiForm(
   if (due_date < date_submitted)
     return { error: "Due date cannot be before the date submitted." };
 
+  const designPackage = parseOptionalUrl(
+    String(formData.get("link_design_package") ?? "").trim(),
+  );
+  if (!designPackage.valid)
+    return { error: "Link Design Package must be a valid http(s) URL." };
+  const blueBin = parseOptionalUrl(
+    String(formData.get("link_blue_bin_section") ?? "").trim(),
+  );
+  if (!blueBin.valid)
+    return { error: "Link Blue Bin Section must be a valid http(s) URL." };
+
   return {
     values: {
       description,
       discipline: discipline || null,
-      assigned_to: assigned_to || null,
+      contractor: contractor || null,
+      link_design_package: designPackage.url,
+      link_blue_bin_section: blueBin.url,
       date_submitted,
       due_date,
     },

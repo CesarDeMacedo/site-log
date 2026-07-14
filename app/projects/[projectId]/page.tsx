@@ -233,7 +233,7 @@ export default async function ProjectDashboardPage({
               <table className="w-full border-collapse text-[12.5px]">
                 <thead>
                   <tr>
-                    {["ID", "Description", "Assigned to", "Days open", "Status"].map(
+                    {["ID", "Description", "Contractor", "Days open", "Status"].map(
                       (h) => (
                         <th key={h} className={TH_CLASS}>
                           {h}
@@ -261,7 +261,7 @@ export default async function ProjectDashboardPage({
                         </td>
                         <td className={`${TD_CLASS} text-text`}>{rfi.description}</td>
                         <td className={`${TD_CLASS} text-xs text-muted`}>
-                          {rfi.assigned_to ?? "—"}
+                          {rfi.contractor ?? "—"}
                         </td>
                         <td
                           className={`${TD_CLASS} font-mono text-xs ${

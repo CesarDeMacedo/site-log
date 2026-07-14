@@ -31,7 +31,9 @@ Rationale: this stack has generous free tiers, is well-documented for AI coding 
 | rfi_number | text | e.g. "RFI-118" — auto-increment per project on insert |
 | description | text | |
 | discipline | text | e.g. Structural, Mechanical, Electrical, Architecture, Survey |
-| assigned_to | text | free text for MVP |
+| contractor | text | dropdown "Contractor 1"–"Contractor 5" or free-text custom name (renamed from assigned_to in migration 0002) |
+| link_design_package | text, nullable | optional http(s) URL |
+| link_blue_bin_section | text, nullable | optional http(s) URL |
 | date_submitted | date | |
 | due_date | date | |
 | date_answered | date, nullable | |
