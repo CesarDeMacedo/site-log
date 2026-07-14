@@ -8,13 +8,11 @@ import {
   avgOverdueDays,
   formatActivityTime,
   formatDaysUntil,
-  nextSubmittalDeadlineDays,
   upcomingDeadlines,
   type ActivityTone,
 } from "@/lib/dashboard-logic";
 import { todayISO } from "@/lib/dates";
 import { getProjectOr404 } from "@/lib/get-project";
-import { formatCost, isResolvedChangeOrder } from "@/lib/change-order-logic";
 import {
   isClosedState,
   RFI_STATUS_LABELS,
@@ -23,14 +21,8 @@ import {
   rfiIsOverdue,
   type RfiDisplayStatus,
 } from "@/lib/rfi-logic";
-import {
-  reviewProgressPercent,
-  SUBMITTAL_STATUS_LABELS,
-  submittalDisplayStatus,
-  type SubmittalDisplayStatus,
-} from "@/lib/submittal-logic";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase/server";
-import type { ActivityEntry, ChangeOrder, Rfi, Submittal } from "@/lib/types";
+import type { ActivityEntry, Rfi } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -40,13 +32,6 @@ const RFI_TONE: Record<RfiDisplayStatus, StampTone> = {
   overdue: "overdue",
   answered: "approved",
   closed: "closed",
-};
-const SUB_TONE: Record<SubmittalDisplayStatus, StampTone> = {
-  open: "open",
-  in_review: "review",
-  overdue: "overdue",
-  approved: "approved",
-  rejected: "closed",
 };
 const DOT_CLASS: Record<ActivityTone, string> = {
   blue: "bg-blueprint",
@@ -144,7 +129,7 @@ export default async function ProjectDashboardPage({
   const month = today.slice(0, 7);
   const prevMonth = prevMonthKey(month);
 
-  const [rfisRes, submittalsRes, changeOrdersRes, recentActivityRes, monthActivityRes] =
+  const [rfisRes, recentActivityRes, monthActivityRes] =
     await Promise.all([
       supabase
         .from("rfis")
@@ -152,17 +137,6 @@ export default async function ProjectDashboardPage({
         .eq("project_id", project.id)
         .order("created_at", { ascending: false })
         .returns<Rfi[]>(),
-      supabase
-        .from("submittals")
-        .select("*")
-        .eq("project_id", project.id)
-        .order("created_at", { ascending: false })
-        .returns<Submittal[]>(),
-      supabase
-        .from("change_orders")
-        .select("*")
-        .eq("project_id", project.id)
-        .returns<ChangeOrder[]>(),
       supabase
         .from("activity_log")
         .select("*")
@@ -179,13 +153,10 @@ export default async function ProjectDashboardPage({
     ]);
 
   const firstError =
-    rfisRes.error ?? submittalsRes.error ?? changeOrdersRes.error ??
-    recentActivityRes.error ?? monthActivityRes.error;
+    rfisRes.error ?? recentActivityRes.error ?? monthActivityRes.error;
   if (firstError) return <Notice title="Database error">{firstError.message}</Notice>;
 
   const rfis = rfisRes.data ?? [];
-  const submittals = submittalsRes.data ?? [];
-  const changeOrders = changeOrdersRes.data ?? [];
   const recentActivity = recentActivityRes.data ?? [];
   const monthActivity = monthActivityRes.data ?? [];
 
@@ -196,16 +167,10 @@ export default async function ProjectDashboardPage({
     (r) => (rfiDaysOpen(r, today) ?? 0) >= 5,
   ).length;
   const avgDelay = avgOverdueDays(rfis, today);
-  const inReviewSubs = submittals.filter((s) => s.status === "in_review").length;
-  const nextDeadline = nextSubmittalDeadlineDays(submittals, today);
   const approvedNow = approvedInMonth(monthActivity, month);
   const approvedPrev = approvedInMonth(monthActivity, prevMonth);
-  const activeCos = changeOrders.filter((c) => !isResolvedChangeOrder(c.status));
-  const underReviewTotal = activeCos
-    .filter((c) => c.status === "under_review")
-    .reduce((sum, c) => sum + (Number(c.estimated_cost) || 0), 0);
 
-  const deadlines = upcomingDeadlines(rfis, submittals, today);
+  const deadlines = upcomingDeadlines(rfis, [], today);
   const base = `/projects/${project.id}`;
 
   return (
@@ -229,7 +194,7 @@ export default async function ProjectDashboardPage({
         </div>
       </div>
 
-      <div className="mb-[22px] grid grid-cols-2 gap-3 xl:grid-cols-5">
+      <div className="mb-[22px] grid grid-cols-2 gap-3 xl:grid-cols-3">
         <Kpi
           label="Open RFIs"
           value={String(openRfis.length)}
@@ -248,33 +213,11 @@ export default async function ProjectDashboardPage({
           accent="var(--color-danger)"
         />
         <Kpi
-          label="Submittals in review"
-          value={String(inReviewSubs)}
-          valueSuffix={`/ ${submittals.length}`}
-          delta={
-            nextDeadline !== null
-              ? `next deadline: ${nextDeadline === 0 ? "today" : `${nextDeadline} days`}`
-              : "no upcoming deadlines"
-          }
-          accent="var(--color-amber)"
-        />
-        <Kpi
           label="Approved this month"
           value={String(approvedNow)}
           delta={approvedDelta(approvedNow, approvedPrev)}
           deltaClass={approvedNow >= approvedPrev ? "text-success" : "text-danger"}
           accent="var(--color-success)"
-        />
-        <Kpi
-          label="Change orders (PCO)"
-          value={String(activeCos.length)}
-          valueSuffix="active"
-          delta={
-            underReviewTotal > 0
-              ? `${formatCost(underReviewTotal)} under review`
-              : "nothing under review"
-          }
-          accent="var(--color-muted-2)"
         />
       </div>
 
@@ -347,74 +290,6 @@ export default async function ProjectDashboardPage({
             </div>
           </div>
 
-          <div className="rounded-lg border border-line bg-surface">
-            <PanelHead
-              title="Submittal Log"
-              count={`${inReviewSubs} in review · ${submittals.length} total`}
-              href={`${base}/submittals`}
-            />
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-[12.5px]">
-                <thead>
-                  <tr>
-                    {["ID", "Item", "Supplier", "Progress", "Status"].map((h) => (
-                      <th key={h} className={TH_CLASS}>
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="[&_tr:last-child_td]:border-b-0">
-                  {submittals.length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="px-[18px] py-6 text-center text-muted">
-                        No submittals yet.
-                      </td>
-                    </tr>
-                  )}
-                  {submittals.slice(0, 5).map((submittal) => {
-                    const display = submittalDisplayStatus(submittal, today);
-                    const pct = reviewProgressPercent(
-                      submittal.review_step,
-                      submittal.review_steps_total,
-                    );
-                    return (
-                      <tr key={submittal.id}>
-                        <td className={`${TD_CLASS} font-mono text-xs text-blueprint`}>
-                          {submittal.submittal_number}
-                        </td>
-                        <td className={`${TD_CLASS} text-text`}>{submittal.item}</td>
-                        <td className={`${TD_CLASS} text-xs text-muted`}>
-                          {submittal.supplier ?? "—"}
-                        </td>
-                        <td className={TD_CLASS}>
-                          <span className="mr-1.5 inline-block h-[5px] w-[60px] overflow-hidden rounded-[3px] bg-line align-middle">
-                            <span
-                              className="block h-full bg-blueprint"
-                              style={{ width: `${pct}%` }}
-                            />
-                          </span>
-                          <span className="align-middle font-mono text-xs">
-                            {submittal.review_step}/{submittal.review_steps_total}
-                          </span>
-                        </td>
-                        <td className={TD_CLASS}>
-                          <Stamp
-                            tone={SUB_TONE[display]}
-                            label={
-                              display === "overdue"
-                                ? "Overdue"
-                                : SUBMITTAL_STATUS_LABELS[display]
-                            }
-                          />
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
         </div>
 
         <div className="space-y-4">
@@ -474,7 +349,7 @@ export default async function ProjectDashboardPage({
       </div>
 
       <div className="mt-4 text-center font-mono text-[10.5px] text-muted-2">
-        SITE LOG · CONSTRUCTION ADMINISTRATION TRACKER
+        RFI LOG · CONSTRUCTION ADMINISTRATION TRACKER
       </div>
     </>
   );

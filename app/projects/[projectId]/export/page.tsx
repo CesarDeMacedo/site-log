@@ -23,14 +23,12 @@ export default async function ExportPage({
   const project = await getProjectOr404(projectId);
   const supabase = getSupabase();
 
-  const [rfis, submittals, changeOrders] = await Promise.all([
-    supabase.from("rfis").select("id", { count: "exact", head: true }).eq("project_id", project.id),
-    supabase.from("submittals").select("id", { count: "exact", head: true }).eq("project_id", project.id),
-    supabase.from("change_orders").select("id", { count: "exact", head: true }).eq("project_id", project.id),
-  ]);
+  const rfis = await supabase
+    .from("rfis")
+    .select("id", { count: "exact", head: true })
+    .eq("project_id", project.id);
 
-  const firstError = rfis.error ?? submittals.error ?? changeOrders.error;
-  if (firstError) return <Notice title="Database error">{firstError.message}</Notice>;
+  if (rfis.error) return <Notice title="Database error">{rfis.error.message}</Notice>;
 
   const today = todayISO();
   const base = `/projects/${project.id}/export`;
@@ -41,19 +39,6 @@ export default async function ExportPage({
         "All RFIs with dates, status, and the computed days-open and overdue flags.",
       count: rfis.count ?? 0,
       href: `${base}/rfis`,
-    },
-    {
-      title: "Submittal Log",
-      description:
-        "All submittals with supplier, review progress, due date, and overdue flag.",
-      count: submittals.count ?? 0,
-      href: `${base}/submittals`,
-    },
-    {
-      title: "Change Orders (PCO)",
-      description: "All change orders with estimated cost (CAD) and status.",
-      count: changeOrders.count ?? 0,
-      href: `${base}/change-orders`,
     },
   ];
 
@@ -67,7 +52,7 @@ export default async function ExportPage({
           {project.name}
         </h1>
         <div className="text-[13px] text-muted">
-          Download this project&apos;s logs as CSV for client updates and reporting.
+          Download this project&apos;s RFI log as CSV for client updates and reporting.
         </div>
       </div>
 

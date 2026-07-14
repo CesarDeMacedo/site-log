@@ -40,25 +40,6 @@ const PROJECT_NAV: NavEntry[] = [
       </svg>
     ),
   },
-  {
-    label: "Submittals",
-    sub: "/submittals",
-    icon: (
-      <svg {...iconProps}>
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-        <path d="M14 2v6h6" />
-      </svg>
-    ),
-  },
-  {
-    label: "Change Orders",
-    sub: "/change-orders",
-    icon: (
-      <svg {...iconProps}>
-        <path d="M12 2v20M2 12h20" />
-      </svg>
-    ),
-  },
 ];
 
 const REPORT_NAV: NavEntry[] = [
@@ -127,10 +108,10 @@ export function Sidebar({ projects }: { projects: Project[] }) {
     <aside className="flex w-[232px] shrink-0 flex-col gap-[26px] border-r border-line bg-surface px-4 py-[22px]">
       <div className="flex items-center gap-2.5 px-1.5">
         <div className="flex h-[34px] w-[34px] -rotate-2 items-center justify-center rounded border-2 border-blueprint font-display text-[15px] font-bold text-blueprint">
-          SL
+          RL
         </div>
         <div className="font-display text-[14.5px] font-semibold leading-tight tracking-[0.4px]">
-          SITE LOG
+          RFI LOG
           <span className="mt-0.5 block text-[10px] font-medium tracking-[1.6px] text-muted">
             CONSTRUCTION ADMIN
           </span>

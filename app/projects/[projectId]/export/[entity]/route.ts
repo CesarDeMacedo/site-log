@@ -1,16 +1,9 @@
 import { NextResponse } from "next/server";
 import { toCsv, type CsvValue } from "@/lib/csv";
 import { todayISO } from "@/lib/dates";
-import {
-  CHANGE_ORDER_EXPORT_HEADERS,
-  changeOrderExportRows,
-  RFI_EXPORT_HEADERS,
-  rfiExportRows,
-  SUBMITTAL_EXPORT_HEADERS,
-  submittalExportRows,
-} from "@/lib/export-logic";
+import { RFI_EXPORT_HEADERS, rfiExportRows } from "@/lib/export-logic";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase/server";
-import type { ChangeOrder, Rfi, Submittal } from "@/lib/types";
+import type { Rfi } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -19,17 +12,6 @@ const ENTITIES = {
     table: "rfis",
     headers: RFI_EXPORT_HEADERS,
     toRows: (data: unknown[], today: string) => rfiExportRows(data as Rfi[], today),
-  },
-  submittals: {
-    table: "submittals",
-    headers: SUBMITTAL_EXPORT_HEADERS,
-    toRows: (data: unknown[], today: string) =>
-      submittalExportRows(data as Submittal[], today),
-  },
-  "change-orders": {
-    table: "change_orders",
-    headers: CHANGE_ORDER_EXPORT_HEADERS,
-    toRows: (data: unknown[]) => changeOrderExportRows(data as ChangeOrder[]),
   },
 } as const;
 
@@ -70,7 +52,7 @@ export async function GET(
   const today = todayISO();
   const rows: CsvValue[][] = config.toRows(data ?? [], today);
   const csv = toCsv([...config.headers], rows);
-  const filename = `site-log-${entity}-${today}.csv`;
+  const filename = `rfi-log-${entity}-${today}.csv`;
 
   return new NextResponse(csv, {
     headers: {

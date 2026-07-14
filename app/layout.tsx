@@ -22,9 +22,8 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Site Log — Construction Administration Tracker",
-  description:
-    "Track RFIs, Submittals, and Change Orders across construction projects.",
+  title: "RFI Log — Construction Administration Tracker",
+  description: "Track RFIs across construction projects.",
 };
 
 // Data is fetched fresh on every request (no caching yet).

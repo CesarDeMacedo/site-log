@@ -33,7 +33,7 @@ export default async function ProjectsPage() {
           Projects
         </h1>
         <div className="text-[13px] text-muted">
-          Each project has its own RFI, Submittal, and Change Order logs.
+          Each project has its own RFI log.
         </div>
       </div>
 
