@@ -57,7 +57,7 @@ export default async function ExportPage({
     <>
       <div className="mb-[22px]">
         <div className="mb-1 font-mono text-[11px] tracking-[1px] text-blueprint">
-          REPORTS · EXPORT / SHARE
+          REPORTS · EXPORT / IMPORT / SHARE
         </div>
         <h1 className="mb-1 font-display text-[26px] font-semibold tracking-[0.3px]">
           {project.name}

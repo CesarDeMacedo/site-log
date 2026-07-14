@@ -44,7 +44,7 @@ const PROJECT_NAV: NavEntry[] = [
 
 const REPORT_NAV: NavEntry[] = [
   {
-    label: "Export / Share",
+    label: "Export / Import / Share",
     sub: "/export",
     icon: (
       <svg {...iconProps}>
@@ -106,7 +106,11 @@ export function Sidebar({ projects }: { projects: Project[] }) {
 
   return (
     <aside className="flex w-[232px] shrink-0 flex-col gap-[26px] border-r border-line bg-surface px-4 py-[22px]">
-      <div className="flex items-center gap-2.5 px-1.5">
+      <Link
+        href="/"
+        title="RFI Log home"
+        className="flex items-center gap-2.5 rounded-md px-1.5 transition-opacity hover:opacity-80"
+      >
         <div className="flex h-[34px] w-[34px] -rotate-2 items-center justify-center rounded border-2 border-blueprint font-display text-[15px] font-bold text-blueprint">
           RL
         </div>
@@ -116,7 +120,7 @@ export function Sidebar({ projects }: { projects: Project[] }) {
             CONSTRUCTION ADMIN
           </span>
         </div>
-      </div>
+      </Link>
 
       <div>
         <div className="mb-0.5 px-2.5 text-[10px] font-semibold tracking-[1.6px] text-muted-2">
