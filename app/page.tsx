@@ -174,7 +174,12 @@ export default function LandingPage() {
 
       <footer className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-line py-6 font-mono text-[10.5px] text-muted-2">
         <span>RFI LOG · CONSTRUCTION ADMINISTRATION TRACKER</span>
-        <span>© {new Date().getFullYear()}</span>
+        <span className="flex items-center gap-4">
+          <Link href="/about" className="transition-colors hover:text-blueprint">
+            Built by Cesar De Macedo →
+          </Link>
+          <span>© {new Date().getFullYear()}</span>
+        </span>
       </footer>
     </div>
   );
