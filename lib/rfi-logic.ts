@@ -46,6 +46,21 @@ export function isClosedState(status: RfiStatus): boolean {
   return RFI_CLOSED_STATES.includes(status);
 }
 
+/** Empty input is fine (null); a non-empty value must be an http(s) URL. */
+export function parseOptionalHttpUrl(
+  raw: string,
+): { url: string | null; valid: boolean } {
+  if (!raw) return { url: null, valid: true };
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:")
+      return { url: null, valid: false };
+    return { url: raw, valid: true };
+  } catch {
+    return { url: null, valid: false };
+  }
+}
+
 /** SPEC.md §2: days_open = today − date_submitted, only while not answered/closed. */
 export function rfiDaysOpen(
   rfi: Pick<Rfi, "status" | "date_submitted">,

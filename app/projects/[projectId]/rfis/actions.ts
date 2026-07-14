@@ -5,6 +5,7 @@ import { getSupabase } from "@/lib/supabase/server";
 import {
   isClosedState,
   OTHER_CONTRACTOR,
+  parseOptionalHttpUrl,
   RFI_STATUS_FLOW,
   todayISO,
 } from "@/lib/rfi-logic";
@@ -27,18 +28,6 @@ interface RfiFormValues {
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-function parseOptionalUrl(raw: string): { url: string | null; valid: boolean } {
-  if (!raw) return { url: null, valid: true };
-  try {
-    const parsed = new URL(raw);
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:")
-      return { url: null, valid: false };
-    return { url: raw, valid: true };
-  } catch {
-    return { url: null, valid: false };
-  }
-}
-
 function parseRfiForm(
   formData: FormData,
 ): { values: RfiFormValues; error?: never } | { values?: never; error: string } {
@@ -59,12 +48,12 @@ function parseRfiForm(
   if (due_date < date_submitted)
     return { error: "Due date cannot be before the date submitted." };
 
-  const designPackage = parseOptionalUrl(
+  const designPackage = parseOptionalHttpUrl(
     String(formData.get("link_design_package") ?? "").trim(),
   );
   if (!designPackage.valid)
     return { error: "Link Design Package must be a valid http(s) URL." };
-  const blueBin = parseOptionalUrl(
+  const blueBin = parseOptionalHttpUrl(
     String(formData.get("link_blue_bin_section") ?? "").trim(),
   );
   if (!blueBin.valid)
