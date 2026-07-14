@@ -17,7 +17,7 @@ export async function GET(
   }
 
   const { projectId } = await params;
-  const supabase = getSupabase();
+  const supabase = await getSupabase();
   const { data: project, error: projectError } = await supabase
     .from("projects")
     .select("*")

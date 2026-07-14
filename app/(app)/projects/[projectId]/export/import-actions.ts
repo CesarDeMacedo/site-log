@@ -28,7 +28,7 @@ export interface ImportResult {
 }
 
 async function fetchExistingNumbers(projectId: string): Promise<string[]> {
-  const { data, error } = await getSupabase()
+  const { data, error } = await (await getSupabase())
     .from("rfis")
     .select("rfi_number")
     .eq("project_id", projectId)
@@ -122,7 +122,7 @@ export async function confirmRfiImport(
     if (valid.length === 0)
       return { ok: false, error: "No valid rows left to import." };
 
-    const { error } = await getSupabase()
+    const { error } = await (await getSupabase())
       .from("rfis")
       .insert(valid.map((r) => ({ project_id: projectId, ...r.values })));
     if (error) return { ok: false, error: error.message };

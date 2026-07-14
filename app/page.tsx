@@ -77,7 +77,7 @@ export default function LandingPage() {
           </div>
         </div>
         <Link
-          href="/projects"
+          href="/login"
           className="rounded-md border border-line px-4 py-2 text-[13px] font-semibold text-text transition-colors hover:border-blueprint hover:text-blueprint"
         >
           Sign in →
@@ -99,7 +99,7 @@ export default function LandingPage() {
           </p>
           <div className="flex flex-wrap items-center gap-4">
             <Link
-              href="/projects"
+              href="/login"
               className="rounded-md bg-blueprint-dim px-6 py-3 text-[14px] font-semibold text-white hover:brightness-110"
             >
               Sign in to your log →

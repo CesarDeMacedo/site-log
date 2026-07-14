@@ -1,4 +1,6 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createServerClient } from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { cookies } from "next/headers";
 
 export function isSupabaseConfigured(): boolean {
   return Boolean(
@@ -7,9 +9,9 @@ export function isSupabaseConfigured(): boolean {
   );
 }
 
-// MVP has no auth (SPEC.md §5), so a plain stateless client with the anon key
-// is enough — no cookie/session plumbing needed yet.
-export function getSupabase(): SupabaseClient {
+/** Per-request client bound to the session cookies, so every query runs as
+ *  the signed-in user and passes the authenticated-only RLS policies. */
+export async function getSupabase(): Promise<SupabaseClient> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) {
@@ -17,5 +19,21 @@ export function getSupabase(): SupabaseClient {
       "Supabase is not configured — copy .env.example to .env.local and fill in your project credentials.",
     );
   }
-  return createClient(url, key, { auth: { persistSession: false } });
+  const cookieStore = await cookies();
+  return createServerClient(url, key, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
+      },
+      setAll(cookiesToSet) {
+        // Server Components can't write cookies; the middleware refreshes the
+        // session, so swallowing the write there is safe.
+        try {
+          for (const { name, value, options } of cookiesToSet) {
+            cookieStore.set(name, value, options);
+          }
+        } catch {}
+      },
+    },
+  });
 }

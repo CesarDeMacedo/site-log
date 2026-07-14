@@ -123,7 +123,7 @@ export default async function ProjectDashboardPage({
 
   const { projectId } = await params;
   const project = await getProjectOr404(projectId);
-  const supabase = getSupabase();
+  const supabase = await getSupabase();
 
   const today = todayISO();
   const month = today.slice(0, 7);

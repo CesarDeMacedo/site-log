@@ -80,7 +80,7 @@ export async function createRfi(formData: FormData): Promise<ActionResult> {
   if (parsed.error) return { ok: false, error: parsed.error };
 
   // rfi_number is intentionally omitted — assigned by the DB trigger (SPEC.md §4)
-  const { error } = await getSupabase()
+  const { error } = await (await getSupabase())
     .from("rfis")
     .insert({ project_id: projectId, ...parsed.values });
   if (error) return { ok: false, error: error.message };
@@ -100,7 +100,7 @@ export async function updateRfi(formData: FormData): Promise<ActionResult> {
   if (!RFI_STATUS_FLOW.includes(status))
     return { ok: false, error: "Invalid status." };
 
-  const supabase = getSupabase();
+  const supabase = await getSupabase();
   const { data: current, error: fetchError } = await supabase
     .from("rfis")
     .select("date_answered, project_id")

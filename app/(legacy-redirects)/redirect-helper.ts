@@ -6,7 +6,7 @@ import { getSupabase, isSupabaseConfigured } from "@/lib/supabase/server";
  *  to the project list — keeps old bookmarks working. */
 export async function redirectLegacyRoute(subRoute: string): Promise<never> {
   if (isSupabaseConfigured()) {
-    const { data: projects } = await getSupabase()
+    const { data: projects } = await (await getSupabase())
       .from("projects")
       .select("id")
       .order("created_at", { ascending: true })

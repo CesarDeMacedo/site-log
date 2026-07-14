@@ -125,7 +125,7 @@ Do not build Phase 2 until Phase 1 (manual CRUD + fixed-template import) is work
 ## 5. Non-functional requirements
 
 - Responsive down to tablet width at minimum (construction PMs often use tablets on site); mobile-friendly is a bonus, not required for MVP.
-- No auth complexity needed for MVP demo — Supabase magic-link auth or even a single shared password is enough; skip building full role-based permissions.
+- Auth: Supabase Auth with email + password (migration 0003). All app routes require a session (middleware redirects to /login); the landing page is public. RLS policies allow any authenticated user full read/write — no per-owner isolation, no roles (future phase if needed).
 - Keep the visual language from the existing mockup (dark theme, blueprint-blue accent, "stamp" style status badges) — this is already validated and should carry into the real build.
 
 ## 6. Suggested build order (for Claude Code sessions)

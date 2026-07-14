@@ -35,7 +35,7 @@ export async function GET(
     return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
   }
 
-  const supabase = getSupabase();
+  const supabase = await getSupabase();
   const { data: project, error: projectError } = await supabase
     .from("projects")
     .select("id")

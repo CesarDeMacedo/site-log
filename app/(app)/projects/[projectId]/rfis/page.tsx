@@ -17,7 +17,7 @@ export default async function RfisPage({
   const { projectId } = await params;
   const project = await getProjectOr404(projectId);
 
-  const { data: rfis, error } = await getSupabase()
+  const { data: rfis, error } = await (await getSupabase())
     .from("rfis")
     .select("*")
     .eq("project_id", project.id)

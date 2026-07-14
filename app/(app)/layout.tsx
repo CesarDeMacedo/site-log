@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 async function fetchProjects(): Promise<Project[]> {
   if (!isSupabaseConfigured()) return [];
   try {
-    const { data } = await getSupabase()
+    const { data } = await (await getSupabase())
       .from("projects")
       .select("*")
       .order("created_at", { ascending: true })
@@ -19,13 +19,28 @@ async function fetchProjects(): Promise<Project[]> {
   }
 }
 
+async function fetchUserEmail(): Promise<string | null> {
+  if (!isSupabaseConfigured()) return null;
+  try {
+    const {
+      data: { user },
+    } = await (await getSupabase()).auth.getUser();
+    return user?.email ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export default async function AppLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const projects = await fetchProjects();
+  const [projects, userEmail] = await Promise.all([
+    fetchProjects(),
+    fetchUserEmail(),
+  ]);
   return (
     <div className="flex min-h-screen">
-      <Sidebar projects={projects} />
+      <Sidebar projects={projects} userEmail={userEmail} />
       <main className="max-w-[1360px] flex-1 px-[30px] pb-10 pt-6">
         {children}
       </main>

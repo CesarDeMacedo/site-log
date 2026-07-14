@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { pathForProject, projectIdFromPath } from "@/lib/paths";
+import { getBrowserSupabase } from "@/lib/supabase/client";
 import type { Project } from "@/lib/types";
 
 interface NavEntry {
@@ -96,10 +97,22 @@ function NavItem({
   );
 }
 
-export function Sidebar({ projects }: { projects: Project[] }) {
+export function Sidebar({
+  projects,
+  userEmail,
+}: {
+  projects: Project[];
+  userEmail: string | null;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const projectId = projectIdFromPath(pathname);
+
+  async function handleSignOut() {
+    await getBrowserSupabase().auth.signOut();
+    router.push("/");
+    router.refresh();
+  }
   const knownProjectId = projects.some((p) => p.id === projectId)
     ? projectId
     : null;
@@ -201,6 +214,21 @@ export function Sidebar({ projects }: { projects: Project[] }) {
             </option>
           ))}
         </select>
+
+        <div className="mt-3.5 flex items-center justify-between gap-2 border-t border-line pt-3">
+          <span
+            className="min-w-0 truncate font-mono text-[10.5px] text-muted-2"
+            title={userEmail ?? undefined}
+          >
+            {userEmail ?? ""}
+          </span>
+          <button
+            onClick={handleSignOut}
+            className="shrink-0 rounded-md border border-line px-2.5 py-1 text-[11.5px] font-semibold text-muted transition-colors hover:border-danger/60 hover:text-danger"
+          >
+            Sign out
+          </button>
+        </div>
       </div>
     </aside>
   );

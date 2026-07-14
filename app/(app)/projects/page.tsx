@@ -13,7 +13,7 @@ const TD_CLASS = "border-b border-line/60 px-[18px] py-[11px]";
 export default async function ProjectsPage() {
   if (!isSupabaseConfigured()) return <SetupNotice />;
 
-  const { data: projects, error } = await getSupabase()
+  const { data: projects, error } = await (await getSupabase())
     .from("projects")
     .select("*")
     .order("created_at", { ascending: true })

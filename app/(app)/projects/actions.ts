@@ -18,7 +18,7 @@ export async function createProject(
 
   if (!name) return { ok: false, error: "Project name is required." };
 
-  const { data, error } = await getSupabase()
+  const { data, error } = await (await getSupabase())
     .from("projects")
     .insert({
       name,

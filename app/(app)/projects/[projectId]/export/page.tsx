@@ -22,7 +22,7 @@ export default async function ExportPage({
 
   const { projectId } = await params;
   const project = await getProjectOr404(projectId);
-  const supabase = getSupabase();
+  const supabase = await getSupabase();
 
   const rfis = await supabase
     .from("rfis")

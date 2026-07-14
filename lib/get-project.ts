@@ -5,7 +5,7 @@ import type { Project } from "./types";
 /** Fetch the project scoping the current route, or 404. A malformed id
  *  (invalid uuid) produces a Postgres error and is treated as 404 too. */
 export async function getProjectOr404(projectId: string): Promise<Project> {
-  const { data, error } = await getSupabase()
+  const { data, error } = await (await getSupabase())
     .from("projects")
     .select("*")
     .eq("id", projectId)
